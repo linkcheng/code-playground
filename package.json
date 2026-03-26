@@ -1,0 +1,8 @@
+{
+  "name": "code-playground-workspace",
+  "private": true,
+  "scripts": {
+    "node": "pnpm --filter ts-node-demo run-script",
+    "react": "pnpm --filter react-ts-demo run-script"
+  }
+}
