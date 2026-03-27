@@ -9,12 +9,11 @@
     "moduleResolution": "bundler",
     "resolveJsonModule": true,
     "allowSyntheticDefaultImports": true,
+    "allowImportingTsExtensions": true,
     "esModuleInterop": true,
 
-    /* Emit */
-    "declaration": true,
-    "sourceMap": true,
-    "outDir": "./dist",
+    /* Emit - 由 Node.js --experimental-strip-types 直接运行，tsc 仅做类型检查 */
+    "noEmit": true,
 
     /* Type Checking */
     "strict": false,
