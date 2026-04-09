@@ -30,8 +30,11 @@ function App() {
         </button>
       </section>
 
-      
-      <MyCom />
+
+      <MyCom
+        label="点我+1"
+        render={(num) => <p>Current count: {num}</p>}
+      />
       
       <div className="ticks"></div>
 

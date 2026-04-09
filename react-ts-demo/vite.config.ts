@@ -10,5 +10,9 @@ export default defineConfig({
       // 使用 __dirname 解析绝对路径
       '@': path.resolve(__dirname, './src')
     }
-  }
+  },
+  server: {
+    host: true,
+    port: 6000
+  },
 })
