@@ -10,6 +10,49 @@ const [count, setCount] = useState(0);
 // setCount(1) → 触发重新渲染 → 新值用于生成 JSX
 ```
 
+## useState 对象类型的注意事项
+
+当 state 是对象时，有三个核心陷阱：
+
+### 1. 不可变性 — 必须创建新对象
+
+```tsx
+const [user, setUser] = useState({ name: 'Tom', age: 20 });
+
+// ❌ 直接修改，引用没变，React 检测不到变化，不触发渲染
+user.name = 'Jerry';
+setUser(user);
+
+// ✅ 展开运算符创建新对象，新引用 → 触发渲染
+setUser({ ...user, name: 'Jerry' });
+```
+
+React 用 `Object.is()` 比较新旧 state，引用相同则跳过渲染。
+
+### 2. setState 是替换，不是合并
+
+```tsx
+// ⚠️ 这样写 name 会丢失！state 变成 { age: 25 }
+setUser({ age: 25 });
+
+// ✅ 保留不需要修改的字段
+setUser(prev => ({ ...prev, age: 25 }));
+```
+
+### 3. 函数式更新避免闭包陷阱
+
+当新 state 依赖旧 state 时，优先用函数式更新：
+
+```tsx
+// ❌ 闭包中 num 可能是旧值
+setNum(num + 1);
+
+// ✅ prev 始终是最新的
+setNum(prev => prev + 1);
+```
+
+> **经验法则**：对象 state 用 `prev => ({ ...prev, key: newVal })`，嵌套深时考虑 `useReducer` 或 immer。
+
 ## useEffect — 副作用 Hook
 
 - **执行时机**：渲染完成、浏览器绘制画面**之后**执行
@@ -60,6 +103,42 @@ useEffect(() => {
 - 条件渲染：`{show ? <Chat /> : null}` — show 变为 false
 - 路由切换：从 `/chat` 跳到 `/login` — Chat 组件卸载
 - 列表项删除：删除列表中的某一项
+
+## useRef — 跨渲染的可变引用
+
+`useRef` 返回 `{ current: 值 }`，在组件整个生命周期内**引用不变**，修改 `.current` **不会触发渲染**。
+
+### 基本用法
+
+```tsx
+const inputRef = useRef<HTMLInputElement>(null);
+//                   ^^^^^^^^^^^^^^^^^ 泛型：告诉 TS 这个 ref 指向 input DOM 元素
+//                                      ^^^^ 初始值（挂载前为 null）
+```
+
+### 绑定 DOM 元素
+
+```tsx
+<input ref={inputRef} type="text" />
+// React 挂载时自动执行 inputRef.current = <input DOM元素>
+// 卸载时自动设回 null
+
+// 读取值（?. 防止挂载前访问 null 报错）
+inputRef.current?.value
+```
+
+### ref vs state
+
+| | useRef | useState |
+|---|---|---|
+| **修改后** | 不触发渲染 | 触发渲染 |
+| **适用场景** | DOM 引用、定时器 ID、标记位 | 需要显示在界面上的数据 |
+
+```tsx
+// ref 存标记位 — 改它不会额外渲染
+const isMounted = useRef(false);
+useEffect(() => { isMounted.current = true; }, []);
+```
 
 ## useState 与 useEffect 的关系
 
