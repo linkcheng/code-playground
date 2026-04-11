@@ -154,6 +154,80 @@ useEffect(() => {
 }, [url]); // url 变了 → 关闭旧连接 → 建立新连接
 ```
 
+## Form Action — 表单提交新模式（React 19）
+
+`action` 替代 `onSubmit`，直接接收函数处理表单提交：
+
+```tsx
+<form action={handleAction} method="POST">
+    <input name="username" />
+    <button type="submit">Submit</button>
+</form>
+
+// handleAction 自动接收 FormData，无需手动 e.preventDefault()
+const handleAction = (formData: FormData) => {
+    formData.get('username')  // 通过 name 属性获取值
+}
+```
+
+### useActionState — 管理 action 的返回值
+
+```tsx
+const [state, submitAction, isPending] = useActionState(handleAction, null)
+//      ^^^^^  action 的返回值（初始为 null）
+//                ^^^^^^^^^^^  包装后的 action，传给 <form action={}>
+//                              ^^^^^^^^^^ 是否正在执行
+
+// action 函数签名多一个 prevState 参数
+const handleAction = async (prevState, formData: FormData) => {
+    await delay(1000)
+    return { success: true }  // 返回值成为 state 和下次的 prevState
+}
+```
+
+### useFormStatus — 在子组件中获取表单状态
+
+```tsx
+const { pending, data, method } = useFormStatus()
+//      ^^^^^^^ 是否提交中
+//               ^^^^ 提交的 FormData
+
+// ⚠️ 必须用在 <form> 内部的子组件中（通过 Context 获取）
+<form action={submitAction}>
+    <MyButton />  {/* ✅ 子组件内可以用 */}
+</form>
+```
+
+### 完整流程
+
+```
+点击提交 → submitAction 触发 → isPending=true → MyButton 显示 "Submitting..."
+→ handleAction 执行（await delay 模拟请求）→ 返回结果 → state 更新 → isPending=false
+```
+
+## Suspense + use — 异步数据处理（React 19）
+
+### use — 在组件中读取 Promise
+
+```tsx
+const Message = ({ messagePromise }) => {
+    const message = use(messagePromise)  // Promise 未 resolve 时会"抛出异常"
+    return <p>{message}</p>
+}
+```
+
+### Suspense — 捕获异常，显示 loading
+
+```tsx
+<Suspense fallback={<p>loading...</p>}>
+    <Message messagePromise={fetchMessage()} />
+</Suspense>
+```
+
+流程：`use()` 发现 Promise 未 resolve → throw → Suspense 捕获 → 显示 fallback → Promise resolve → 重新渲染 → `use()` 返回值。
+
+> Promise 基础知识（resolve、函数引用 vs 函数调用）见 [js-ts-fundamentals.md](js-ts-fundamentals.md)
+
 ## zustand（全局状态管理）与 useState 的区别
 
 | | useState | zustand (useAuthStore) |

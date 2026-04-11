@@ -6,13 +6,17 @@ import './App.css'
 import MyCom from './components/MyCom'
 import { MyList } from './components/List'
 import { MyHooks } from './components/Hooks'
+import { MyForm } from './components/Form'
+import { MyFormAction, MyFormAction2 } from './components/FormAction'
+import { MySuspense } from './components/Suspense'
 
 function App() {
-  const [count, setCount] = useState(0)
+  // const [count, setCount] = useState(0)
   const [isShow, setIsShow] = useState(true)
 
   return (
     <>
+      <section id="center">
       <MyCom
         label="点我+1"
         render={(num) => <p>Current count: {num}</p>}
@@ -24,9 +28,18 @@ function App() {
       <div style={{ textAlign: 'center' }}>
          <button onClick={() => setIsShow(!isShow)}>Toggle</button>
       </div>
+
+
+      <MyForm />
      
+      <MyFormAction />
+
+      <MyFormAction2 />
+
+      <MySuspense />
       
-      <section id="center">
+      </section>
+      {/* <section id="center">
         <div className="hero">
           <img src={heroImg} className="base" width="170" height="179" alt="" />
           <img src={reactLogo} className="framework" alt="React logo" />
@@ -44,7 +57,7 @@ function App() {
         >
           Count is {count}
         </button>
-      </section>
+      </section> */}
     </>
   )
 }
