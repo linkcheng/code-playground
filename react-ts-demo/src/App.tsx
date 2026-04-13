@@ -9,6 +9,10 @@ import { MyHooks } from './components/Hooks'
 import { MyForm } from './components/Form'
 import { MyFormAction, MyFormAction2 } from './components/FormAction'
 import { MySuspense } from './components/Suspense'
+import { MyReducer } from './components/Reducer'
+import { Parent } from './components/Context/Parent'
+import { MyMemo } from './components/Memo'
+import { CustomHooks, ScrollTop } from './components/CustomHooks'
 
 function App() {
   // const [count, setCount] = useState(0)
@@ -37,7 +41,18 @@ function App() {
       <MyFormAction2 />
 
       <MySuspense />
+        
+      <MyReducer />
+        
+      <Parent />
       
+      <MyMemo />
+      <MyMemo />
+      
+      <CustomHooks />  
+
+      <ScrollTop />
+
       </section>
       {/* <section id="center">
         <div className="hero">

@@ -7,7 +7,6 @@ pnpm monorepo 学习项目，包含多个子项目。
 - `react-ts-demo/` — React + TypeScript + Vite（练习 React 组件模式）
 - `ts-node-demo/` — TypeScript + ts-node（练习 TS 语法）
 - `docs/` — 学习笔记（按归属分类）
-  - `js-ts-fundamentals.md` — JS/TS 语言基础（Promise、闭包、函数引用等）
-  - `react-hooks.md` — React 框架（useState、useEffect、useRef、Form Action、Suspense）
-  - `props-and-state.md` — React 框架（Props、State、Render Props）
+  - `js-ts-fundamentals.md` — JS/TS 语言基础，浏览器 API 等
+  - `react-hooks.md` — React 框架（Props、State、useState、useReducer、useContext、useMemo、useCallback、useEffect、useRef、Form Action、Suspense、自定义 Hook 实践）
   - `typescript-ecosystem-notes.md` — 工具链/生态（pnpm、Vite、tsconfig）

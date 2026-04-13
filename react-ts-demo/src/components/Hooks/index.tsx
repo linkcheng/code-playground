@@ -1,7 +1,7 @@
 import { useEffect, useState, useRef} from "react";
 
 export const MyHooks = () => {
-    const [count, setCount] = useState(0)
+    const [count, setCount] = useState(() => 0)
     const inputRef = useRef<HTMLInputElement>(null)
     const isMounted = useRef(false)
 
