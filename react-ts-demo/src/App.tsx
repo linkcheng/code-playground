@@ -13,6 +13,7 @@ import { MyReducer } from './components/Reducer'
 import { Parent } from './components/Context/Parent'
 import { MyMemo } from './components/Memo'
 import { CustomHooks, ScrollTop } from './components/CustomHooks'
+import { MyZod } from './components/MyZod'
 
 function App() {
   // const [count, setCount] = useState(0)
@@ -52,6 +53,8 @@ function App() {
       <CustomHooks />  
 
       <ScrollTop />
+      
+      <MyZod />
 
       </section>
       {/* <section id="center">

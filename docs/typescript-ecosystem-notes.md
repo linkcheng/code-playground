@@ -77,6 +77,31 @@ pnpm --filter <name> add <pkg>  # 为特定子包添加依赖
 pnpm --filter <name> run <cmd>  # 运行子包脚本
 ```
 
+### 1.4 添加子项目流程
+
+**核心原则：脚手架管生成，workspace 管依赖。**
+
+脚手架工具（`pnpm create vite`、`npm init` 等）只负责生成项目模板（文件 + `package.json`），它们不了解你的 monorepo 结构。`pnpm-workspace.yaml` 需要手动维护。
+
+**标准流程：**
+
+```bash
+# 步骤 1：用脚手架生成项目
+pnpm create vite my-project --template=react-ts
+
+# 步骤 2：注册到 workspace
+# 编辑 pnpm-workspace.yaml，在 packages 中添加 'my-project'
+
+# 步骤 3：安装依赖（pnpm 会为所有 workspace 成员统一解析）
+pnpm install
+```
+
+**为什么步骤 2 不可省略？**
+
+`pnpm install` 只会为 `pnpm-workspace.yaml` 中列出的包安装依赖。如果新项目没有注册，`node_modules` 会缺失，dev server 启动时报 `ERR_MODULE_NOT_FOUND`。
+
+> 实践经验：创建 kanban 子项目时，`pnpm create vite kanban` 成功但 `pnpm dev` 失败，原因就是缺少步骤 2。
+
 ---
 
 ## 二、配置文件详解
