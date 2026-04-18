@@ -4,3 +4,4 @@ packages:
   - 'kanban'
 allowBuilds:
   esbuild: false
+  msw: false

@@ -3,6 +3,7 @@
   "private": true,
   "scripts": {
     "node": "pnpm --filter ts-node-demo run-script",
-    "react": "pnpm --filter react-ts-demo run-script"
+    "react": "pnpm --filter react-ts-demo run-script",
+    "kanban": "pnpm --filter kanban run-script"
   }
 }
