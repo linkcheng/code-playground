@@ -66,6 +66,85 @@ Tailwind 的每个 class 对应一条 CSS 属性：
 <div class="bg-white dark:bg-gray-900 text-black dark:text-white">
 ```
 
+### 间距系统（Spacing）
+
+Tailwind 的间距单位 = **4px 的倍数**：
+
+| Class | 值 | Class | 值 |
+|---|---|---|---|
+| `p-1` / `m-1` | 4px | `p-4` / `m-4` | 16px |
+| `p-2` / `m-2` | 8px | `p-6` / `m-6` | 24px |
+| `p-3` / `m-3` | 12px | `p-8` / `m-8` | 32px |
+
+> `p` = **padding**（内边距），`m` = **margin**（外边距）
+
+**方向控制**（以 padding 为例，margin 同理）：
+
+| Class | 含义 | Class | 含义 |
+|---|---|---|---|
+| `p-2` | 四边 8px | `px-4` | 左右 16px |
+| `pt-2` | 顶部 8px | `py-2` | 上下 8px |
+| `pb-2` | 底部 8px | `pl-2` | 左侧 8px |
+| `pr-2` | 右侧 8px | `mt-4` | 顶部外边距 16px |
+
+**Flex 容器间距（gap）**：
+
+`gap-*` 控制 flex/grid 容器**直接子元素之间**的间距：
+
+```html
+<!-- 子元素之间 8px 间隔 -->
+<div class="flex flex-col gap-2">
+  <div>Card Name</div>     <!-- ↑ gap-2 -->
+  <div>Task List</div>      <!-- 不影响首元素上方和末元素下方 -->
+</div>
+```
+
+> `gap` 只作用于**兄弟元素之间**，不会在容器边缘产生间距。需要边缘留白用 `p-*`。
+
+**实际组合模式**（kanban 项目示例）：
+
+```html
+<!-- 标签/徽章样式：水平宽、垂直窄 -->
+<div class="w-fit px-3 py-1 bg-blue-200 rounded-full">Card Name</div>
+
+<!-- 任务列表项：内边距 + 底部外边距 -->
+<div class="w-full p-2 mb-1 bg-white border rounded-lg">Task</div>
+
+<!-- 容器：内边距 + 子元素间距 -->
+<div class="flex flex-col gap-1 p-1">
+  <div>Header</div>
+  <div>Content</div>
+</div>
+```
+
+### 边框与圆角（Border & Radius）
+
+**边框需要显式开启**：`border-*` 只设颜色，必须搭配 `border` 才会显示：
+
+```html
+<!-- 不会显示边框（只设了颜色） -->
+<div class="border-gray-100">
+
+<!-- 会显示 1px 灰色边框 -->
+<div class="border border-gray-100">
+
+<!-- 粗边框 -->
+<div class="border-2 border-gray-300">
+```
+
+> Tailwind 边框三步：`border`（开启）→ `border-*`（粗细）→ `border-gray-*`（颜色）
+
+**圆角梯度**：
+
+| Class | 值 | 效果 |
+|---|---|---|
+| `rounded-sm` | 2px | 微圆角 |
+| `rounded` | 4px | 默认 |
+| `rounded-lg` | 8px | 大圆角 |
+| `rounded-xl` | 12px | 超大圆角 |
+| `rounded-2xl` | 16px | 特大圆角 |
+| `rounded-full` | 50% | 胶囊/圆形 |
+
 ### 自定义主题（v4 方式）
 
 v4 使用 `@theme` 块在 CSS 中定义设计 token：

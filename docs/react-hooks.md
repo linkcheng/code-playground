@@ -62,6 +62,42 @@ Render Props 本质是**回调思想的延伸**：
 
 ## Hooks
 
+### 调用规则 — 为什么 Hook 必须在顶层调用
+
+**核心原因**：React 依赖调用顺序来匹配 Hook 和状态。
+
+React 内部用**链表**存储每个组件的 Hook 集合，靠**位置索引**（第 0 个、第 1 个……）匹配状态，而不是名字或 key：
+
+```
+渲染 #1:  useState(0)  →  useEffect(...)  →  useState(null)
+            ↓                ↓                  ↓
+Hook 链表:  [hook#0]   →   [hook#1]    →    [hook#2]
+
+渲染 #2:  useState(0)  →  useEffect(...)  →  useState(null)
+            ↓                ↓                  ↓
+         复用 hook#0     复用 hook#1       复用 hook#2
+```
+
+如果 Hook 放在条件语句或循环中，数量或顺序可能变化，导致索引错位、状态混乱：
+
+```tsx
+// ❌ 条件渲染导致 Hook 数量不一致
+if (someCondition) {
+  const [count, setCount] = useState(0);  // 有时 hook#0，有时不存在
+}
+const [name, setName] = useState('');      // 有时 hook#0，有时 hook#1 → 错位！
+```
+
+**禁止放在这些位置**：
+
+| 不能放在 | 原因 |
+|---------|------|
+| `if/else` | 条件分支导致数量变化 |
+| `for/while` | 循环次数可能不同 |
+| 嵌套函数 | 不在组件渲染路径上 |
+
+> **本质**：React 没用"命名 key"区分 Hook，选择了最简单的顺序索引方案——省去 key 匹配开销，但牺牲了条件调用的灵活性。自定义 Hook 不创建新的 Hook 节点，其内部的 `useState`/`useEffect` 仍按顺序挂载到宿主组件的链表上。
+
 ### useState — 组件内状态
 
 - **执行时机**：渲染过程中，参与 JSX 生成

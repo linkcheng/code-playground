@@ -202,32 +202,13 @@ const { register, handleSubmit } = useForm<User>({
 
 ## 拖拽交互 — dnd-kit
 
-### 核心概念
+- **DndContext**：最外层容器，用 React Context 共享拖拽状态，管理事件
+- **useDraggable**：让元素可拖，返回 ref + listeners + transform
+- **useDroppable**：让元素可放，返回 ref + isOver（悬停状态）
+- **useSortable**：排序场景合体（= draggable + droppable），需额外安装 `@dnd-kit/sortable`
+- **核心原则**：dnd-kit 只管 UI 动画，数据变更在 `onDragEnd` 回调中手动处理
 
-- **Draggable**：可拖拽的元素
-- **Droppable**：可放置的目标区域
-- **DndContext**：包裹拖拽区域，处理事件和状态
-- **Sensor**：控制拖拽触发方式（鼠标、键盘、触摸）
-
-```tsx
-import { DndContext, useDraggable, useDroppable } from '@dnd-kit/core'
-
-function DraggableItem({ id }: { id: string }) {
-  const { attributes, listeners, setNodeRef } = useDraggable({ id })
-  return <div ref={setNodeRef} {...listeners} {...attributes}>拖我</div>
-}
-
-function DropZone({ id }: { id: string }) {
-  const { setNodeRef } = useDroppable({ id })
-  return <div ref={setNodeRef}>放这里</div>
-}
-```
-
-### 为什么选 dnd-kit
-
-- **无障碍**：内置键盘支持，符合 WAI-ARIA 规范
-- **轻量**：不影响包大小
-- **可定制**：拖拽手柄、动画、排序策略都可配置
+> 详细笔记见 [dnd-kit.md](./dnd-kit.md)
 
 ---
 

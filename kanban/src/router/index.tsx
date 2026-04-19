@@ -1,14 +1,14 @@
-import { Home } from "@/pages/Home"
-import { Board } from "@/pages/Board"
+import { HomePage } from "@/pages/HomePage"
+import { BoardPage } from "@/pages/BoardPage"
 import { createBrowserRouter } from "react-router"
 
 const routes = [
     {
         path: "/",
-        element: <Home />
+        element: <HomePage />
     }, {
         path: "/board",
-        element: <Board />
+        element: <BoardPage />
     }
 ]
 
