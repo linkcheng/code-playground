@@ -31,7 +31,7 @@
 npm create vite@latest my-app -- --template react-ts
 ```
 
-> 详细笔记见 [typescript-ecosystem-notes.md](./typescript-ecosystem-notes.md)
+> 详细笔记见 [vite.md](./vite.md)
 
 ---
 

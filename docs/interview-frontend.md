@@ -684,7 +684,90 @@ setState(newValue)
   最小化 DOM 更新
 ```
 
-### 6.4 核心对比
+### 6.4 架构模式对比（MVC vs MVVM）
+
+React 和 Vue 选择了不同的架构模式，决定了它们数据流的方向和开发者的心智模型。
+
+**React — 单向数据流（类似 MVC）**
+
+```
+              用户操作（onClick / onChange）
+                  │
+                  ▼
+View (JSX) ──→ setState / dispatch ──→ 新 State ──→ 重新渲染 ──→ View 更新
+   ▲                                                               │
+   └──────────────────── 状态驱动视图 ◄─────────────────────────────┘
+
+数据流方向: State → View → 用户操作 → setState → 新 State → View
+                   └─────────── 单向流动 ───────────┘
+```
+
+核心特点：
+- View 层变化**不会**自动更新数据层
+- 开发者必须**手动**调用 `setState` / `useState` 触发更新
+- 数据流方向单一，易于追踪和调试
+
+```jsx
+// React: 手动连接 View 和 State
+function Counter() {
+  const [count, setCount] = useState(0)
+  return (
+    <div>
+      <p>{count}</p>
+      <button onClick={() => setCount(count + 1)}>+1</button>
+      {/*  ↑ 点击 → 手动调用 setter → 触发重新渲染 */}
+    </div>
+  )
+}
+```
+
+**Vue — 双向数据绑定（MVVM）**
+
+```
+View (Template) ◄──── 自动同步 ────→ ViewModel (Proxy 响应式数据)
+       │                                    ▲
+       │ v-model                            │
+       ▼                                    │
+   用户输入 ──→ 自动更新数据 ──→ 自动触发视图更新
+
+数据流方向: Data ←→ View（双向自动同步）
+```
+
+核心特点：
+- 通过 `v-model` 实现**双向数据绑定**
+- View 层变化会**自动**同步到数据层，反之亦然
+- 框架内部通过 Proxy / Object.defineProperty 自动追踪
+
+```vue
+<!-- Vue: 直接修改数据，自动触发视图更新 -->
+<template>
+  <div>
+    <p>{{ count }}</p>
+    <button v-on:click="count++">+1</button>
+    <!-- ↑ 直接修改数据 → Proxy 拦截 → 自动触发视图更新 -->
+  </div>
+</template>
+
+<script>
+export default {
+  data() { return { count: 0 } }  // 可变数据，Proxy 自动追踪
+}
+</script>
+```
+
+**架构差异总结**
+
+| 维度 | React（单向流） | Vue（双向绑定） |
+|------|---------------|---------------|
+| **架构模式** | 类 MVC | MVVM |
+| **数据流方向** | 单向（State → View） | 双向（Data ↔ View） |
+| **View → Data** | 需手动调用 setter | `v-model` 自动同步 |
+| **表单处理** | 受控组件：`value` + `onChange` | `v-model` 一行搞定 |
+| **心智模型** | "状态是唯一数据源，UI 是状态的投影" | "数据与视图自动同步" |
+
+> **注意**：Vue 的双向绑定本质上是单向数据流 + 语法糖。`v-model` 是 `:value` + `@input` 的简写，框架帮你自动完成了 View → Data 的同步。React 则把这个控制权交给了开发者。
+
+### 6.5 核心对比：响应式机制
 
 | 维度 | Vue (Proxy) | React |
 |------|------------|-------|
@@ -704,7 +787,7 @@ count++                // ❌ 不会触发更新
 setCount(count + 1)    // ✅ 必须用 setter
 ```
 
-### 6.5 为什么 React 选择组件级更新
+### 6.6 为什么 React 选择组件级更新
 
 1. **简洁性**：不需要复杂的依赖收集系统，组件函数就是"渲染函数"
 2. **可预测性**：每次渲染都是纯函数 `f(state) = UI`，没有隐藏的依赖追踪
