@@ -35,6 +35,69 @@ function MyButton({ label, onClick, disabled = false }: MyButtonProps) {
 }
 ```
 
+### static propTypes & defaultProps（类组件）
+
+类组件中的静态属性，用于声明 props 的**运行时类型检查**和**默认值**。
+
+#### propTypes — 运行时类型检查
+
+```jsx
+import PropTypes from 'prop-types';
+
+class Button extends React.Component {
+  static propTypes = {
+    label: PropTypes.string.isRequired,   // 必传字符串
+    count: PropTypes.number,              // 可选数字
+    onClick: PropTypes.func,              // 可选函数
+    items: PropTypes.arrayOf(PropTypes.string),   // 字符串数组
+    user: PropTypes.shape({                        // 对象形状
+      name: PropTypes.string,
+      age: PropTypes.number,
+    }),
+  };
+}
+```
+
+- 仅在**开发模式**下生效，生产构建被移除
+- 类型不匹配时控制台打印 warning（不阻断渲染）
+
+#### defaultProps — 默认值
+
+```jsx
+class Button extends React.Component {
+  static defaultProps = {
+    count: 0,
+    label: 'Click me',
+  };
+  // 父组件没传 count 或 label 时，使用这里的默认值
+}
+```
+
+#### 类组件 vs 函数组件对比
+
+```tsx
+// 类组件写法（旧）
+class Button extends React.Component {
+  static propTypes = { label: PropTypes.string.isRequired };
+  static defaultProps = { count: 0 };
+}
+
+// 函数组件写法（推荐）
+interface ButtonProps {
+  label: string;
+  count?: number;
+}
+function Button({ label, count = 0 }: ButtonProps) { /* ... */ }
+```
+
+|                    | propTypes（类组件）         | TypeScript（函数组件） |
+| ------------------ | --------------------------- | ---------------------- |
+| **检查时机** | 运行时                     | 编译时                |
+| **开销**     | 有运行时开销               | 零运行时开销          |
+| **效果**     | warning，不阻断            | 编译报错，直接拦住    |
+
+> `static` 关键字表示属性挂在类本身上（`Button.propTypes`），而非实例上。React 18.3+ 函数组件的 `Button.defaultProps` 已弃用，推荐解构默认值。
+
 ### Render Props（控制反转）
 
 ```tsx
@@ -97,53 +160,9 @@ const [name, setName] = useState('');      // 有时 hook#0，有时 hook#1 → 
 | `for/while` | 循环次数可能不同     |
 | 嵌套函数      | 不在组件渲染路径上   |
 
-> **本质**：React 没用"命名 key"区分 Hook，选择了最简单的顺序索引方案——省去 key 匹配开销，但牺牲了条件调用的灵活性。自定义 Hook 不创建新的 Hook 节点，其内部的 `useState`/`useEffect` 仍按顺序挂载到宿主组件的链表上。
+> **本质**：React 没用”命名 key”区分 Hook，选择了最简单的顺序索引方案——省去 key 匹配开销，但牺牲了条件调用的灵活性。自定义 Hook 不创建新的 Hook 节点，其内部的 `useState`/`useEffect` 仍按顺序挂载到宿主组件的链表上。
 
-### Hooks 执行阶段横向对比
-
-```
-1️⃣ 触发 render（setState / dispatch / context 变化 / 父组件重渲染）
-↓
-2️⃣ Render 阶段 — 组件函数体执行（纯计算，可被中断）
-   ┌──────────────────────────────────────────────────┐
-   │  useState      → 返回当前 state                   │
-   │  useReducer    → 返回当前 state                    │
-   │  useContext    → 读取 context 最新值               │
-   │  useMemo       → 依赖不变返回缓存值，变了重新计算    │
-   │  useCallback   → 依赖不变返回缓存函数              │
-   │  useRef        → 返回 { current } 对象（引用不变）  │
-   └──────────────────────────────────────────────────┘
-↓
-3️⃣ Commit 阶段 — React 更新真实 DOM（不可中断）
-   ┌──────────────────────────────────────────────────┐
-   │  useInsertionEffect  → DOM 变更前（CSS-in-JS 用）  │
-   │  ─── React 写入真实 DOM ───                        │
-   │  Callback ref        → 此刻调用 ref(node)          │
-   │  useLayoutEffect     → DOM 变更后，浏览器绘制前     │
-   │                        ⚠️ 同步执行，会阻塞绘制      │
-   └──────────────────────────────────────────────────┘
-↓
-4️⃣ 浏览器绘制（Paint）
-↓
-5️⃣ 绘制完成后（异步）
-   ┌──────────────────────────────────────────────────┐
-   │  useEffect           → 绘制后异步执行              │
-   │                        ✅ 不阻塞绘制，用户无感知    │
-   └──────────────────────────────────────────────────┘
-```
-
-| Hook | 执行阶段 | 阻塞绘制? | 典型用途 |
-|---|---|---|---|
-| `useState` / `useReducer` | Render | — | 声明状态，参与 JSX 生成 |
-| `useContext` | Render | — | 读取跨层级数据 |
-| `useMemo` / `useCallback` | Render | — | 缓存值/函数引用 |
-| `useRef` | Render | — | 获取可变引用 |
-| `useInsertionEffect` | Commit（DOM 前） | 是 | CSS-in-JS 注入样式 |
-| Callback ref | Commit（DOM 写入时） | 是 | 测量 DOM、初始化第三方库 |
-| `useLayoutEffect` | Commit（DOM 后，绘制前） | **是** | 读取布局、同步修改 DOM |
-| `useEffect` | 绘制后（异步） | **否** | 数据请求、事件监听、日志 |
-
-> **经验法则**：99% 场景用 `useEffect`。只有需要同步读取/修改 DOM 布局（tooltip 定位、动画初始值）时才用 `useLayoutEffect`——它阻塞绘制会影响性能。Render 阶段可被 Concurrent Mode 中断，Commit 阶段不可中断。
+> Hooks 执行阶段的深入分析（Render vs Commit）见 [react-hooks-advanced.md](react-hooks-advanced.md)
 
 ### useState — 组件内状态
 
@@ -390,6 +409,78 @@ useEffect(() => {
 - 路由切换：从 `/chat` 跳到 `/login` — Chat 组件卸载
 - 列表项删除：删除列表中的某一项
 
+> 命令式 vs 声明式的深入对比（用视频播放器示例）见 [react-hooks-advanced.md](react-hooks-advanced.md)
+
+## useEffectEvent — Effect 内的"最新值读取器"（React 19.2）
+
+### 解决什么问题
+
+`useEffect` 的依赖数组确保 Effect 看到最新值，但**任何依赖变化都会重新执行整个 Effect**。有时 Effect 内只是"读取"某个值做回调，并不需要因为它的变化而重新同步。
+
+```tsx
+// ❌ theme 变化导致重连（不需要的副作用）
+function ChatRoom({ roomId, theme }) {
+  useEffect(() => {
+    const connection = createConnection(roomId);
+    connection.on('connected', () => {
+      showNotification('Connected!', theme); // 只是用 theme 做通知样式
+    });
+    connection.connect();
+    return () => connection.disconnect();
+  }, [roomId, theme]); // theme 变了 → 断开重连
+}
+```
+
+### API 签名
+
+```tsx
+const onEvent = useEffectEvent(callback);
+// callback 中的 props/state 总是最新值，不需要放进依赖数组
+```
+
+### 修正后的写法
+
+```tsx
+// ✅ theme 变化不会触发重连，但通知始终用最新样式
+function ChatRoom({ roomId, theme }) {
+  const onConnected = useEffectEvent(() => {
+    showNotification('Connected!', theme); // 总是读最新 theme
+  });
+
+  useEffect(() => {
+    const connection = createConnection(roomId);
+    connection.on('connected', () => onConnected());
+    connection.connect();
+    return () => connection.disconnect();
+  }, [roomId]); // 只在 roomId 变化时重连
+}
+```
+
+### 典型场景：自定义 useInterval
+
+```tsx
+// 不用 useEffectEvent：callback 变化会导致 interval 重置
+// 用 useEffectEvent：callback 始终最新，interval 只由 delay 控制
+function useInterval(callback, delay) {
+  const onTick = useEffectEvent(callback);
+
+  useEffect(() => {
+    if (delay === null) return;
+    const id = setInterval(() => onTick(), delay);
+    return () => clearInterval(id);
+  }, [delay]);
+}
+```
+
+### 约束规则
+
+- 只能在组件/自定义 Hook **顶层**调用（和其他 Hook 一样）
+- 只能在 **Effect 内部**调用，不能在渲染期间或传给子组件
+- **不需要放进依赖数组**，ESLint 插件会自动排除
+- Effect Event 函数的 identity 每次渲染都变（有意为之，防止误用）
+
+> 本质：把"响应式"（依赖数组，变了就重同步）和"非响应式"（Effect Event，变了不触发但能读最新值）显式区分开。之前用 `useRef` 保存最新回调的模式（`ref.current = callback`）就是它的前身。
+
 ## useMemo & useCallback — 缓存（记忆化）
 
 两者都是**缓存 Hook**，避免每次渲染重复计算或创建新引用。
@@ -622,22 +713,26 @@ function MeasureExample() {
 
 ```tsx
 function useElementSize() {
-  const [size, setSize] = useState({ width: 0, height: 0 })
+  const [size, setSize] = useState({ width: 0, height: 0 });
 
   const ref = useCallback((node: HTMLElement | null) => {
-    if (!node) return
+    if (!node) return;
+
     const observer = new ResizeObserver(([entry]) => {
       setSize({
         width: entry.contentRect.width,
         height: entry.contentRect.height,
-      })
-    })
-    observer.observe(node)
-    // ⚠️ 组件卸载时 React 会再次调用 ref(null)，此时 node 为 null 直接 return
-    // 但 observer 没有 disconnect，需要额外处理（见下方清理模式）
-  }, [])
+      });
+    });
 
-  return { ref, size }
+    observer.observe(node);
+
+    return () => {
+      observer.disconnect();
+    };
+  }, []);
+
+  return { ref, size };
 }
 ```
 
@@ -657,214 +752,4 @@ const refCallback = useCallback((node: HTMLElement | null) => {
 
 > React 19 对内联函数 ref 的处理更智能，减少了不必要的 null→node 循环。
 
-## useState 与 useEffect 的关系
-
-- `useState` — 管"存什么数据"（渲染中）
-- `useEffect` — 管"数据变了之后做什么事"（渲染后）
-
-```tsx
-const [url, setUrl] = useState("ws://localhost:8080");
-
-useEffect(() => {
-  const ws = new WebSocket(url);
-  return () => ws.close();
-}, [url]); // url 变了 → 关闭旧连接 → 建立新连接
-```
-
-## Form Action — 表单提交新模式（React 19）
-
-`action` 替代 `onSubmit`，直接接收函数处理表单提交：
-
-```tsx
-<form action={handleAction} method="POST">
-    <input name="username" />
-    <button type="submit">Submit</button>
-</form>
-
-// handleAction 自动接收 FormData，无需手动 e.preventDefault()
-const handleAction = (formData: FormData) => {
-    formData.get('username')  // 通过 name 属性获取值
-}
-```
-
-### useActionState — 管理 action 的返回值
-
-```tsx
-const [state, submitAction, isPending] = useActionState(handleAction, null)
-//      ^^^^^  action 的返回值（初始为 null）
-//                ^^^^^^^^^^^  包装后的 action，传给 <form action={}>
-//                              ^^^^^^^^^^ 是否正在执行
-
-// action 函数签名多一个 prevState 参数
-const handleAction = async (prevState, formData: FormData) => {
-    await delay(1000)
-    return { success: true }  // 返回值成为 state 和下次的 prevState
-}
-```
-
-### useFormStatus — 在子组件中获取表单状态
-
-```tsx
-const { pending, data, method } = useFormStatus()
-//      ^^^^^^^ 是否提交中
-//               ^^^^ 提交的 FormData
-
-// ⚠️ 必须用在 <form> 内部的子组件中（通过 Context 获取）
-<form action={submitAction}>
-    <MyButton />  {/* ✅ 子组件内可以用 */}
-</form>
-```
-
-### 完整流程
-
-```
-点击提交 → submitAction 触发 → isPending=true → MyButton 显示 "Submitting..."
-→ handleAction 执行（await delay 模拟请求）→ 返回结果 → state 更新 → isPending=false
-```
-
-## Suspense + use — 异步数据处理（React 19）
-
-### use — 在组件中读取 Promise
-
-```tsx
-const Message = ({ messagePromise }) => {
-    const message = use(messagePromise)  // Promise 未 resolve 时会"抛出异常"
-    return <p>{message}</p>
-}
-```
-
-### Suspense — 捕获异常，显示 loading
-
-```tsx
-<Suspense fallback={<p>loading...</p>}>
-    <Message messagePromise={fetchMessage()} />
-</Suspense>
-```
-
-流程：`use()` 发现 Promise 未 resolve → throw → Suspense 捕获 → 显示 fallback → Promise resolve → 重新渲染 → `use()` 返回值。
-
-> Promise 基础知识（resolve、函数引用 vs 函数调用）见 [js-ts-fundamentals.md](js-ts-fundamentals.md)
-
-## zustand（全局状态管理）与 useState 的区别
-
-|                    | useState               | zustand (useAuthStore)     |
-| ------------------ | ---------------------- | -------------------------- |
-| **作用域**   | 单个组件内             | 全局，所有组件共享         |
-| **跨组件**   | 需要一层层 props 传递  | 直接用，无需传递           |
-| **持久化**   | 组件卸载就没了         | store 一直在               |
-| **函数引用** | 每次渲染可能创建新引用 | store 中的函数引用始终不变 |
-
-zustand store 中的函数引用不变，因为函数在 `create()` 时创建，存储在 store 对象上，不会重新创建：
-
-```tsx
-// 引用不变 → effect 只执行一次
-const restore = useAuthStore((s) => s.restore);
-useEffect(() => { restore(); }, [restore]);
-```
-
----
-
-## 自定义 Hook 实践
-
-自定义 Hook 是用基础 Hook（useState、useEffect、useCallback 等）**组合**出来的可复用逻辑。
-
-### useLocalStorage — 持久化状态
-
-#### 方案一：useEffect 被动同步
-
-```tsx
-export const useLocalStorage = <T>(key: string, defaultValue: T): [T, Dispatch<SetStateAction<T>>] => {
-    const [state, setState] = useState<T>(() => {
-        const storeValue = localStorage.getItem(key)
-        return storeValue !== null ? JSON.parse(storeValue) : defaultValue
-    })
-
-    useEffect(() => {
-        localStorage.setItem(key, JSON.stringify(state))
-    }, [key, state])
-
-    return [state, setState]  // 返回原生 setState，任何方式修改都能同步
-}
-```
-
-#### 方案二：useCallback 主动同步
-
-```tsx
-export const useLocalStorageWithCallback = <T>(key: string, defaultValue: T) => {
-    const [state, setState] = useState<T>(() => {
-        const storeValue = localStorage.getItem(key)
-        return storeValue !== null ? JSON.parse(storeValue) : defaultValue
-    })
-
-    const setValue = useCallback(
-        (value: T | ((prev: T) => T)) => {
-            setState((prev) => {
-                const newValue = value instanceof Function ? value(prev) : value
-                localStorage.setItem(key, JSON.stringify(newValue))
-                return newValue
-            })
-        },
-        [key]
-    )
-
-    return [state, setValue] as const  // 调用即同步，无中间态
-}
-```
-
-#### 两种方案对比
-
-|                    | useEffect 被动同步              | useCallback 主动同步                      |
-| ------------------ | ------------------------------- | ----------------------------------------- |
-| **返回值**   | 原生 `setState`，类型完整     | 自定义 `setValue`，需手动处理函数式更新 |
-| **同步时机** | 渲染后才写 localStorage         | 调用时立即写                              |
-| **防御性**   | 强 — 任何方式改 state 都能同步 | 弱 — 绕过 setValue 直接改就不同步        |
-| **多余写入** | 初始化也会触发 effect 写一次    | 只在主动调用时写                          |
-
-> **实际项目推荐 useEffect 方案**：更简单、防御性更强，渲染延迟几乎感知不到。
-
-### useAsync — 异步请求封装
-
-```tsx
-export const useAsync = <T>(asyncFunction: () => Promise<T>) => {
-    const [data, setData] = useState<T | null>(null)
-    const [loading, setLoading] = useState(false)
-    const [error, setError] = useState<Error | null>(null)
-
-    const execute = useCallback(() => {
-        setLoading(true)
-        setData(null)
-        setError(null)
-
-        return asyncFunction()
-            .then((response) => { setData(response); setLoading(false) })
-            .catch((error) => { setError(error); setLoading(false) })
-    }, [asyncFunction])
-
-    return { execute, loading, data, error }
-}
-
-// 使用：T 自动推断为 User
-const { data, error } = useAsync(() => fetchUser(1))
-// data: User | null,  error: Error | null
-```
-
-### useScroll — 监听滚动位置
-
-```tsx
-const getPosition = () => ({
-    x: window.scrollX,
-    y: window.scrollY
-})
-
-export const useScroll = () => {
-    const [position, setPosition] = useState(getPosition())
-    useEffect(() => {
-        const handler = () => { setPosition(getPosition()) }
-        window.addEventListener("scroll", handler)
-        return () => { window.removeEventListener("scroll", handler) }
-    }, [])
-    return position
-}
-```
-
-> 事件监听的标准模式：`addEventListener` 注册 → `removeEventListener` 在清理函数中注销。必须传同一个函数引用，否则 remove 无效。
+> useState 与 useEffect 的关系、React 19 新 API（Form Action、Suspense）、zustand 对比、自定义 Hook 实践见 [react-hooks-advanced.md](react-hooks-advanced.md)

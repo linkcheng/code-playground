@@ -1,0 +1,864 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>React Hooks — 从基础到进阶</title>
+<link rel="preconnect" href="https://api.fontshare.com">
+<link href="https://api.fontshare.com/v2/css?f[]=clash-display@400,500,600,700&f[]=satoshi@400,500,700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+  --bg: #0a0e27;
+  --bg-card: rgba(17, 22, 64, 0.7);
+  --bg-code: #0d1117;
+  --text: #e0e0ff;
+  --text-muted: #6a6f99;
+  --cyan: #00f5ff;
+  --magenta: #ff00ff;
+  --green: #3fb950;
+  --yellow: #f0e040;
+  --orange: #f09040;
+  --border: rgba(0, 245, 255, 0.12);
+  --glow-c: 0 0 8px rgba(0,245,255,0.4), 0 0 30px rgba(0,245,255,0.15);
+  --glow-m: 0 0 8px rgba(255,0,255,0.4), 0 0 30px rgba(255,0,255,0.15);
+
+  --title-size: clamp(2rem, 5vw, 4rem);
+  --h2-size: clamp(1.25rem, 3vw, 2.2rem);
+  --h3-size: clamp(1rem, 2.2vw, 1.5rem);
+  --body-size: clamp(0.75rem, 1.4vw, 1.05rem);
+  --code-size: clamp(0.65rem, 1.1vw, 0.9rem);
+  --small-size: clamp(0.6rem, 0.9vw, 0.8rem);
+
+  --slide-padding: clamp(1.5rem, 4vw, 4rem);
+  --gap: clamp(0.4rem, 1.2vw, 1rem);
+}
+
+html, body { height: 100%; overflow-x: hidden; background: var(--bg); color: var(--text); font-family: 'Satoshi', sans-serif; }
+html { scroll-snap-type: y mandatory; scroll-behavior: smooth; }
+
+.grid-bg {
+  position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  background-image:
+    linear-gradient(rgba(0,245,255,0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0,245,255,0.04) 1px, transparent 1px);
+  background-size: 50px 50px;
+}
+
+#particles { position: fixed; inset: 0; z-index: 0; pointer-events: none; }
+
+.slide {
+  width: 100vw; height: 100vh; height: 100dvh; overflow: hidden;
+  scroll-snap-align: start; display: flex; flex-direction: column;
+  position: relative; z-index: 1;
+}
+.slide-content {
+  flex: 1; display: flex; flex-direction: column; justify-content: center;
+  max-height: 100%; overflow: hidden; padding: var(--slide-padding);
+  max-width: 1100px; margin: 0 auto; width: 100%;
+}
+
+h1, h2, h3 { font-family: 'Clash Display', sans-serif; font-weight: 600; color: var(--cyan); }
+.slide-title { font-size: var(--h2-size); margin-bottom: var(--gap); text-shadow: var(--glow-c); letter-spacing: -0.02em; }
+.slide-sub { font-size: var(--body-size); color: var(--text-muted); margin-bottom: var(--gap); }
+
+.code-block {
+  background: var(--bg-code); border: 1px solid var(--border); border-radius: 8px;
+  padding: clamp(0.5rem, 1.5vw, 1rem) clamp(0.6rem, 1.5vw, 1.2rem);
+  font-family: 'JetBrains Mono', monospace; font-size: var(--code-size);
+  line-height: 1.6; overflow: hidden; white-space: pre; position: relative;
+  box-shadow: inset 0 0 30px rgba(0,245,255,0.03);
+}
+.code-block::before {
+  content: ''; position: absolute; top: 0; left: 0; right: 0; height: 1px;
+  background: linear-gradient(90deg, transparent, var(--cyan), transparent);
+}
+.kw { color: var(--magenta); }
+.fn { color: var(--cyan); }
+.str { color: var(--green); }
+.num { color: var(--yellow); }
+.cm { color: var(--text-muted); font-style: italic; }
+.op { color: var(--orange); }
+.type { color: var(--orange); }
+
+.table-wrap { overflow: hidden; }
+.table-wrap table { width: 100%; border-collapse: collapse; font-size: var(--body-size); }
+.table-wrap th { color: var(--cyan); font-weight: 500; text-align: left; padding: clamp(0.3rem,0.8vw,0.6rem); border-bottom: 1px solid var(--border); font-family: 'Clash Display', sans-serif; }
+.table-wrap td { padding: clamp(0.25rem,0.7vw,0.5rem); border-bottom: 1px solid rgba(255,255,255,0.04); color: var(--text); vertical-align: top; }
+.table-wrap tr:hover td { background: rgba(0,245,255,0.03); }
+
+.card-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr)); gap: var(--gap); }
+.card {
+  background: var(--bg-card); border: 1px solid var(--border); border-radius: 10px;
+  padding: clamp(0.6rem, 1.5vw, 1.2rem); backdrop-filter: blur(8px);
+}
+.card h3 { font-size: var(--h3-size); margin-bottom: clamp(0.2rem,0.5vw,0.5rem); }
+.card p, .card li { font-size: var(--body-size); color: var(--text-muted); line-height: 1.5; }
+.card ul { padding-left: 1.2em; }
+
+.bullet-list { list-style: none; display: flex; flex-direction: column; gap: clamp(0.3rem, 0.8vh, 0.7rem); }
+.bullet-list li { font-size: var(--body-size); line-height: 1.5; padding-left: 1.4em; position: relative; }
+.bullet-list li::before { content: '\25B8'; position: absolute; left: 0; color: var(--cyan); font-size: 0.9em; }
+.bullet-list li strong { color: var(--cyan); }
+
+.two-col { display: grid; grid-template-columns: 1fr 1fr; gap: clamp(1rem, 3vw, 2.5rem); }
+
+.tag { display: inline-block; font-size: var(--small-size); padding: 0.15em 0.6em; border-radius: 20px; font-weight: 500; }
+.tag-cyan { background: rgba(0,245,255,0.12); color: var(--cyan); border: 1px solid rgba(0,245,255,0.25); }
+.tag-magenta { background: rgba(255,0,255,0.12); color: var(--magenta); border: 1px solid rgba(255,0,255,0.25); }
+
+.flow { display: flex; align-items: center; gap: clamp(0.3rem,1vw,0.8rem); flex-wrap: wrap; font-size: var(--body-size); }
+.flow-step { background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; padding: clamp(0.3rem,0.8vw,0.6rem) clamp(0.5rem,1.2vw,1rem); white-space: nowrap; }
+.flow-arrow { color: var(--cyan); font-size: 1.2em; }
+
+.section-divider { justify-content: center; align-items: center; text-align: center; }
+.section-divider h2 { font-size: clamp(2rem, 6vw, 5rem); }
+.section-divider .section-num { font-size: clamp(4rem, 10vw, 8rem); font-weight: 700; color: rgba(0,245,255,0.06); position: absolute; top: 50%; left: 50%; transform: translate(-50%,-60%); font-family: 'Clash Display', sans-serif; }
+
+.title-slide { justify-content: center; align-items: center; text-align: center; }
+.title-slide h1 { font-size: clamp(2.5rem, 8vw, 6rem); letter-spacing: -0.03em; text-shadow: 0 0 20px rgba(0,245,255,0.5), 0 0 60px rgba(0,245,255,0.2); }
+.title-slide .subtitle { font-size: clamp(1rem, 2.5vw, 1.8rem); color: var(--text-muted); margin-top: var(--gap); font-family: 'Clash Display', sans-serif; }
+.title-slide .meta { font-size: var(--small-size); color: var(--text-muted); margin-top: calc(var(--gap) * 2); opacity: 0.6; }
+
+.diagram-box { background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; padding: clamp(0.5rem,1.2vw,1rem); font-family: 'JetBrains Mono', monospace; font-size: var(--code-size); line-height: 1.5; white-space: pre; overflow: hidden; }
+
+.progress-bar { position: fixed; bottom: 0; left: 0; right: 0; height: 3px; z-index: 100; background: rgba(255,255,255,0.05); }
+.progress-fill { height: 100%; background: linear-gradient(90deg, var(--cyan), var(--magenta)); transition: width 0.3s ease; box-shadow: 0 0 10px var(--cyan); }
+
+.nav-dots { position: fixed; right: clamp(0.5rem,2vw,1.5rem); top: 50%; transform: translateY(-50%); z-index: 100; display: flex; flex-direction: column; gap: 6px; }
+.nav-dot { width: 6px; height: 6px; border-radius: 50%; background: rgba(255,255,255,0.15); transition: all 0.3s; cursor: pointer; }
+.nav-dot.active { background: var(--cyan); box-shadow: var(--glow-c); transform: scale(1.5); }
+
+.slide-counter { position: fixed; bottom: clamp(0.5rem,2vw,1rem); right: clamp(0.5rem,2vw,1.5rem); z-index: 100; font-size: var(--small-size); color: var(--text-muted); font-family: 'JetBrains Mono', monospace; }
+
+.keyboard-hint { position: fixed; bottom: clamp(0.5rem,2vw,1rem); left: 50%; transform: translateX(-50%); z-index: 100; font-size: var(--small-size); color: rgba(255,255,255,0.2); transition: opacity 0.5s; }
+
+.reveal { opacity: 0; transform: translateY(20px); transition: opacity 0.6s ease, transform 0.6s ease; }
+.reveal.visible { opacity: 1; transform: translateY(0); }
+.reveal-d1 { transition-delay: 0.1s; }
+.reveal-d2 { transition-delay: 0.2s; }
+
+.bad { color: #ff6b6b; }
+.good { color: var(--green); }
+.bad::before { content: '\2717 '; }
+.good::before { content: '\2713 '; }
+
+@media (max-height: 700px) {
+  :root { --slide-padding: clamp(0.75rem, 3vw, 2rem); --gap: clamp(0.3rem,1vw,0.6rem); --h2-size: clamp(1rem, 2.8vw, 1.8rem); }
+}
+@media (max-height: 600px) {
+  :root { --slide-padding: clamp(0.5rem, 2vw, 1.2rem); --code-size: clamp(0.6rem,0.9vw,0.75rem); }
+  .nav-dots, .keyboard-hint, .section-divider .section-num { display: none; }
+}
+@media (max-width: 768px) {
+  .two-col { grid-template-columns: 1fr; }
+  .card-grid { grid-template-columns: 1fr; }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.2s !important; }
+  html { scroll-behavior: auto; }
+}
+</style>
+</head>
+<body>
+
+<canvas id="particles"></canvas>
+<div class="grid-bg"></div>
+
+<main>
+
+<!-- SLIDE 1: TITLE -->
+<section class="slide title-slide" id="s1">
+  <div class="slide-content">
+    <h1>React Hooks</h1>
+    <p class="subtitle">从基础到进阶</p>
+    <p class="meta">Code Playground 学习笔记</p>
+  </div>
+</section>
+
+<!-- SLIDE 2: TOC -->
+<section class="slide" id="s2">
+  <div class="slide-content">
+    <h2 class="slide-title">目录</h2>
+    <div class="two-col">
+      <div>
+        <h3 style="margin-bottom:var(--gap)"><span class="tag tag-cyan">基础篇</span></h3>
+        <ul class="bullet-list">
+          <li>Props &amp; State 核心概念</li>
+          <li>Hooks 调用规则</li>
+          <li>useState / useReducer</li>
+          <li>useContext 跨层级传递</li>
+          <li>useEffect 副作用处理</li>
+          <li>useMemo &amp; useCallback 缓存</li>
+          <li>useRef &amp; Callback Ref</li>
+        </ul>
+      </div>
+      <div>
+        <h3 style="margin-bottom:var(--gap)"><span class="tag tag-magenta">进阶篇</span></h3>
+        <ul class="bullet-list">
+          <li>Hooks 执行阶段横向对比</li>
+          <li>Commit 阶段三个方法</li>
+          <li>flushSync 强制同步刷新</li>
+          <li>命令式 vs 声明式</li>
+          <li>React 19 新 API</li>
+          <li>zustand 全局状态管理</li>
+          <li>自定义 Hook 实践</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- SLIDE 3: PROPS & STATE -->
+<section class="slide" id="s3">
+  <div class="slide-content">
+    <h2 class="slide-title">Props &amp; State — 核心概念</h2>
+    <div class="table-wrap reveal">
+      <table>
+        <tr><th></th><th>Props</th><th>State</th></tr>
+        <tr><td><strong>本质</strong></td><td>外部传入的数据（只读）</td><td>组件内部管理的数据（可变）</td></tr>
+        <tr><td><strong>代码</strong></td><td>&lt;Comp label="hi" /&gt;</td><td>const [n, setN] = useState(0)</td></tr>
+        <tr><td><strong>修改</strong></td><td>不能修改，由父组件控制</td><td>通过 setState 修改</td></tr>
+      </table>
+    </div>
+    <div class="card-grid reveal reveal-d1" style="margin-top:var(--gap)">
+      <div class="card">
+        <h3>状态封装</h3>
+        <p>组件用 useState 自管理，独立可复用，但父组件无法直接控制</p>
+      </div>
+      <div class="card">
+        <h3>状态提升</h3>
+        <p>状态放父组件，通过 props 传入子组件，父组件拥有完全控制权</p>
+      </div>
+      <div class="card">
+        <h3>选择依据</h3>
+        <p><strong>谁需要这个数据，状态就放在谁那里</strong></p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- SLIDE 4: HOOKS RULES -->
+<section class="slide" id="s4">
+  <div class="slide-content">
+    <h2 class="slide-title">Hooks 调用规则 — 为什么必须顶层调用</h2>
+    <div class="reveal">
+      <p class="slide-sub">React 用<strong>链表 + 位置索引</strong>匹配 Hook，不是靠名字或 key</p>
+      <div class="diagram-box">渲染 #1:  useState(0)  ->  useEffect()  ->  useState('')
+             |                |                |
+Hook 链表:  [hook#0]   ->   [hook#1]   ->   [hook#2]
+
+渲染 #2:  useState(0)  ->  useEffect()  ->  useState('')
+             |                |                |
+          复用 hook#0     复用 hook#1     复用 hook#2</div>
+    </div>
+    <div class="two-col reveal reveal-d1" style="margin-top:var(--gap)">
+      <div>
+        <p class="bad">不能放在 if/else、for/while、嵌套函数</p>
+        <p class="bad">条件渲染导致 Hook 数量不一致 -> 索引错位 -> 状态混乱</p>
+      </div>
+      <div>
+        <p class="good">始终在组件顶层、按固定顺序调用</p>
+        <p class="good">自定义 Hook 内部的 Hook 也挂载到宿主组件链表上</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- SLIDE 5: USESTATE BASICS -->
+<section class="slide" id="s5">
+  <div class="slide-content">
+    <h2 class="slide-title">useState — 组件内状态</h2>
+    <div class="code-block reveal"><span class="kw">const</span> [count, setCount] = <span class="fn">useState</span>(<span class="num">0</span>)
+<span class="cm">// setCount(1) -> 触发重新渲染 -> 新值用于生成 JSX</span></div>
+    <h3 class="reveal" style="margin-top:var(--gap);font-size:var(--h3-size)">三个核心陷阱</h3>
+    <div class="card-grid reveal reveal-d1">
+      <div class="card">
+        <h3>不可变性</h3>
+        <div class="code-block" style="font-size:var(--small-size);padding:0.5rem"><span class="bad">user.name = 'Jerry'; setUser(user)</span>
+<span class="good">setUser({...user, name: 'Jerry'})</span></div>
+        <p style="margin-top:0.3rem">React 用 Object.is() 比较引用</p>
+      </div>
+      <div class="card">
+        <h3>setState 是替换</h3>
+        <div class="code-block" style="font-size:var(--small-size);padding:0.5rem"><span class="bad">setUser({ age: 25 })</span>  <span class="cm">// name 丢失!</span>
+<span class="good">setUser(prev => ({...prev, age: 25}))</span></div>
+      </div>
+      <div class="card">
+        <h3>函数式更新</h3>
+        <div class="code-block" style="font-size:var(--small-size);padding:0.5rem"><span class="bad">setNum(num + 1)</span>  <span class="cm">// 闭包旧值</span>
+<span class="good">setNum(prev => prev + 1)</span>  <span class="cm">// 最新值</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- SLIDE 6: USESTATE ADVANCED -->
+<section class="slide" id="s6">
+  <div class="slide-content">
+    <h2 class="slide-title">useState — 进阶技巧</h2>
+    <div class="two-col">
+      <div class="reveal">
+        <h3>惰性初始化</h3>
+        <div class="code-block"><span class="cm">// ❌ 每次渲染都执行</span>
+<span class="kw">const</span> [data] = <span class="fn">useState</span>(<span class="fn">expensiveCalc</span>())
+
+<span class="cm">// ✅ 只在首次渲染时执行</span>
+<span class="kw">const</span> [data] = <span class="fn">useState</span>(() <span class="op">=></span> <span class="fn">expensiveCalc</span>())</div>
+      </div>
+      <div class="reveal reveal-d1">
+        <h3>函数式更新的参数来源</h3>
+        <div class="code-block"><span class="fn">setCount</span>(c <span class="op">=></span> c + <span class="num">1</span>)
+<span class="cm">// c 由 React 内部传入，保证最新</span>
+<span class="cm">// React: 暂存函数 -> 取最新 state</span>
+<span class="cm">//      -> 调用 -> 替换旧状态</span>
+
+<span class="cm">// 两种调用方式：</span>
+<span class="fn">setCount</span>(<span class="num">5</span>)            <span class="cm">// 直接传值</span>
+<span class="fn">setCount</span>(c <span class="op">=></span> c + <span class="num">1</span>) <span class="cm">// 传函数</span></div>
+      </div>
+    </div>
+    <div class="card reveal reveal-d2" style="margin-top:var(--gap)">
+      <p><strong>注意</strong>：<code>useState(fn)</code> 把 fn 的<strong>返回值</strong>当初始值；<code>setCount(fn)</code> 把 fn 当更新函数。同样传函数，语义完全不同。</p>
+    </div>
+  </div>
+</section>
+
+<!-- SLIDE 7: USEREDUCER -->
+<section class="slide" id="s7">
+  <div class="slide-content">
+    <h2 class="slide-title">useReducer — 复杂状态管理</h2>
+    <div class="flow reveal">
+      <span class="flow-step">用户操作</span><span class="flow-arrow">-></span>
+      <span class="flow-step" style="border-color:var(--magenta)">dispatch(action)</span><span class="flow-arrow">-></span>
+      <span class="flow-step">reducer(state, action)</span><span class="flow-arrow">-></span>
+      <span class="flow-step" style="border-color:var(--green)">新 state</span><span class="flow-arrow">-></span>
+      <span class="flow-step">UI 更新</span>
+    </div>
+    <div class="code-block reveal reveal-d1" style="margin-top:var(--gap)"><span class="kw">const</span> reducer = (state, action) <span class="op">=></span> {
+  <span class="kw">switch</span> (action.type) {
+    <span class="kw">case</span> <span class="str">"changeName"</span>: <span class="kw">return</span> {...state, name: action.payload}
+    <span class="kw">case</span> <span class="str">"changeAge"</span>:  <span class="kw">return</span> {...state, age: <span class="fn">Number</span>(action.payload)}
+    <span class="kw">default</span>:          <span class="kw">return</span> state
+  }
+}
+<span class="kw">const</span> [info, dispatch] = <span class="fn">useReducer</span>(reducer, initialState)
+<span class="fn">dispatch</span>({ type: <span class="str">"changeName"</span>, payload: <span class="str">"新名字"</span> })</div>
+    <p class="reveal reveal-d2" style="margin-top:var(--gap);font-size:var(--body-size)">Reducer 必须是<strong>纯函数</strong>：不直接修改 state，用 <code>{...state, key: newVal}</code> 返回新对象</p>
+  </div>
+</section>
+
+<!-- SLIDE 8: USECONTEXT -->
+<section class="slide" id="s8">
+  <div class="slide-content">
+    <h2 class="slide-title">useContext — 跨层级传递数据</h2>
+    <div class="flow reveal">
+      <span class="flow-step" style="border-color:var(--cyan)">createContext</span><span class="flow-arrow">-></span>
+      <span class="flow-step" style="border-color:var(--magenta)">Provider 注入</span><span class="flow-arrow">-></span>
+      <span class="flow-step" style="border-color:var(--green)">useContext 消费</span>
+    </div>
+    <div class="code-block reveal reveal-d1" style="margin-top:var(--gap)"><span class="cm">// 1. 创建</span>
+<span class="kw">export const</span> ThemeContext = <span class="fn">createContext</span>({ theme: <span class="str">"light"</span> })
+
+<span class="cm">// 2. 提供</span>
+&lt;<span class="type">ThemeContext.Provider</span> value={{ theme, toggleTheme }}&gt;
+  &lt;<span class="type">Child</span> /&gt;
+&lt;/<span class="type">ThemeContext.Provider</span>&gt;
+
+<span class="cm">// 3. 消费（推荐封装自定义 Hook）</span>
+<span class="kw">const</span> { theme } = <span class="fn">useContext</span>(ThemeContext)</div>
+    <div class="card reveal reveal-d2" style="margin-top:var(--gap)">
+      <p><strong>最佳实践</strong>：封装 <code>useTheme()</code>，消费方不用知道用哪个 Context。没有 Provider 时拿到 <code>createContext</code> 的默认值。</p>
+    </div>
+  </div>
+</section>
+
+<!-- SLIDE 9: USEEFFECT -->
+<section class="slide" id="s9">
+  <div class="slide-content">
+    <h2 class="slide-title">useEffect — 副作用 Hook</h2>
+    <p class="slide-sub reveal">执行时机：渲染完成、浏览器绘制画面<strong>之后</strong>执行</p>
+    <div class="card-grid reveal">
+      <div class="card">
+        <h3>每次渲染后</h3>
+        <div class="code-block" style="font-size:var(--small-size);padding:0.4rem"><span class="fn">useEffect</span>(() <span class="op">=></span> { ... })</div>
+      </div>
+      <div class="card">
+        <h3>只在挂载时</h3>
+        <div class="code-block" style="font-size:var(--small-size);padding:0.4rem"><span class="fn">useEffect</span>(() <span class="op">=></span> { ... }, [])</div>
+      </div>
+      <div class="card">
+        <h3>依赖变化时</h3>
+        <div class="code-block" style="font-size:var(--small-size);padding:0.4rem"><span class="fn">useEffect</span>(() <span class="op">=></span> { ... }, [count])</div>
+      </div>
+    </div>
+    <div class="reveal reveal-d1" style="margin-top:var(--gap)">
+      <h3>依赖变化机制</h3>
+      <p style="font-size:var(--body-size)">React 用 <code>Object.is()</code> 对比依赖项前后值，不同则重新执行 effect。</p>
+    </div>
+  </div>
+</section>
+
+<!-- SLIDE 10: USEEFFECT CLEANUP -->
+<section class="slide" id="s10">
+  <div class="slide-content">
+    <h2 class="slide-title">useEffect — 清理函数</h2>
+    <div class="reveal">
+      <div class="diagram-box">渲染1后 -> 执行函数体 -> 清理函数存起来
+渲染2后 -> 先执行上次清理 -> 执行新函数体 -> 新清理存起来
+...
+卸载时   -> 执行最后一次清理</div>
+    </div>
+    <div class="code-block reveal reveal-d1" style="margin-top:var(--gap)"><span class="fn">useEffect</span>(() <span class="op">=></span> {
+  <span class="kw">const</span> ws = <span class="kw">new</span> <span class="fn">WebSocket</span>(url)
+  <span class="kw">return</span> () <span class="op">=></span> ws.<span class="fn">close</span>()   <span class="cm">// 清理函数，被 React 存起来</span>
+}, [url])</div>
+    <div class="card-grid reveal reveal-d2" style="margin-top:var(--gap)">
+      <div class="card"><p>清理函数不是定义时执行，而是被<strong>React 保管</strong></p></div>
+      <div class="card"><p>在<strong>下次 effect 执行前</strong>或<strong>组件卸载时</strong>调用</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- SLIDE 11: MEMO HOOKS -->
+<section class="slide" id="s11">
+  <div class="slide-content">
+    <h2 class="slide-title">useMemo &amp; useCallback — 缓存</h2>
+    <div class="table-wrap reveal">
+      <table>
+        <tr><th></th><th>useMemo</th><th>useCallback</th></tr>
+        <tr><td><strong>缓存的是</strong></td><td>计算结果（值）</td><td>函数引用</td></tr>
+        <tr><td><strong>写法</strong></td><td>useMemo(() =&gt; val, deps)</td><td>useCallback(() =&gt; fn, deps)</td></tr>
+        <tr><td><strong>等价</strong></td><td colspan="2">useCallback(fn, deps) === useMemo(() =&gt; fn, deps)</td></tr>
+      </table>
+    </div>
+    <div class="table-wrap reveal reveal-d1" style="margin-top:var(--gap)">
+      <table>
+        <tr><th>场景</th><th>用不用</th></tr>
+        <tr><td>不传子组件、不放进依赖数组</td><td><span class="tag tag-magenta">不用</span></td></tr>
+        <tr><td>函数传给 React.memo 子组件</td><td><span class="tag tag-cyan">useCallback</span></td></tr>
+        <tr><td>对象/数组传给子组件</td><td><span class="tag tag-cyan">useMemo</span></td></tr>
+        <tr><td>函数放进 useEffect 依赖</td><td><span class="tag tag-cyan">useCallback</span></td></tr>
+      </table>
+    </div>
+    <p class="reveal reveal-d2" style="margin-top:var(--gap);font-size:var(--body-size)">核心问题：<strong>引用相等</strong> — 每次渲染 () =&gt; {} 都是新函数、{} 都是新对象。</p>
+  </div>
+</section>
+
+<!-- SLIDE 12: REACT.MEMO -->
+<section class="slide" id="s12">
+  <div class="slide-content">
+    <h2 class="slide-title">React.memo 协作 — 三位一体</h2>
+    <p class="slide-sub reveal">父组件重渲染 -> 所有子组件无条件跟着重渲染（默认行为）</p>
+    <div class="card-grid reveal">
+      <div class="card" style="border-color:var(--cyan)">
+        <h3>React.memo</h3>
+        <p>浅比较 props，相同则跳过渲染</p>
+        <div class="code-block" style="font-size:var(--small-size);padding:0.4rem;margin-top:0.3rem"><span class="kw">const</span> MC = React.<span class="fn">memo</span>(Child)</div>
+      </div>
+      <div class="card" style="border-color:var(--magenta)">
+        <h3>useCallback</h3>
+        <p>稳定函数 props 引用</p>
+        <div class="code-block" style="font-size:var(--small-size);padding:0.4rem;margin-top:0.3rem"><span class="kw">const</span> fn = <span class="fn">useCallback</span>(() =&gt; {...}, [])</div>
+      </div>
+      <div class="card" style="border-color:var(--green)">
+        <h3>useMemo</h3>
+        <p>稳定对象 props 引用</p>
+        <div class="code-block" style="font-size:var(--small-size);padding:0.4rem;margin-top:0.3rem"><span class="kw">const</span> s = <span class="fn">useMemo</span>(() =&gt; ({...}), [])</div>
+      </div>
+    </div>
+    <div class="card reveal reveal-d1" style="margin-top:var(--gap)">
+      <p>三者<strong>缺一不可</strong>：只用 useCallback 不用 memo -> 子照样渲染；只用 memo 不用 useCallback -> 引用变化 memo 失效。原始类型 props 天然稳定，只需要 memo。</p>
+    </div>
+  </div>
+</section>
+
+<!-- SLIDE 13: USEREF -->
+<section class="slide" id="s13">
+  <div class="slide-content">
+    <h2 class="slide-title">useRef — 跨渲染的可变引用</h2>
+    <div class="table-wrap reveal">
+      <table>
+        <tr><th></th><th>useRef</th><th>useState</th></tr>
+        <tr><td><strong>修改后</strong></td><td>不触发渲染</td><td>触发渲染</td></tr>
+        <tr><td><strong>场景</strong></td><td>DOM 引用、定时器 ID、标记位</td><td>需要显示在界面上的数据</td></tr>
+      </table>
+    </div>
+    <div class="two-col reveal reveal-d1" style="margin-top:var(--gap)">
+      <div>
+        <h3 style="font-size:var(--h3-size)">对象 ref</h3>
+        <div class="code-block"><span class="kw">const</span> ref = <span class="fn">useRef</span>&lt;HTMLInputElement&gt;(<span class="num">null</span>)
+&lt;<span class="type">input</span> ref={ref} /&gt;
+<span class="cm">// 挂载时: ref.current = DOM</span>
+<span class="cm">// 卸载时: ref.current = null</span></div>
+      </div>
+      <div>
+        <h3 style="font-size:var(--h3-size)">Callback ref</h3>
+        <div class="code-block">&lt;<span class="type">div</span> ref={(node) <span class="op">=></span> {
+  <span class="kw">if</span> (node) {
+    <span class="fn">setHeight</span>(node.getBoundingClientRect().height)
+  }
+}} /&gt;
+<span class="cm">// 感知 DOM 绑定时机</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- SLIDE 14: SECTION DIVIDER -->
+<section class="slide section-divider" id="s14">
+  <span class="section-num">02</span>
+  <div class="slide-content">
+    <h2>进阶篇</h2>
+    <p style="font-size:var(--body-size);color:var(--text-muted)">执行机制 · 设计模式 · 新 API</p>
+  </div>
+</section>
+
+<!-- SLIDE 15: EXECUTION PHASES -->
+<section class="slide" id="s15">
+  <div class="slide-content">
+    <h2 class="slide-title">Hooks 执行阶段 — 全景时序</h2>
+    <div class="reveal">
+      <div class="diagram-box">1. 触发更新: setState / dispatch / context 变化
+|
+2. Render 阶段 -- 执行组件函数，计算 UI（纯计算，可中断）
+   useState / useReducer / useContext / useMemo / useCallback / useRef
+|
+3. Commit 阶段 -- 同步更新真实 DOM（不可中断）
+   useInsertionEffect -> DOM mutation -> Callback ref -> useLayoutEffect
+|
+4. 浏览器绘制 Paint
+|
+5. useEffect -- 绘制后异步执行（请求、订阅、定时器）</div>
+    </div>
+    <p class="reveal reveal-d1" style="margin-top:var(--gap);font-size:var(--body-size)">一句话：<strong>Render 算 UI -> Commit 改 DOM -> LayoutEffect 绘制前处理 -> Effect 绘制后处理</strong></p>
+  </div>
+</section>
+
+<!-- SLIDE 16: COMMIT PHASE -->
+<section class="slide" id="s16">
+  <div class="slide-content">
+    <h2 class="slide-title">Commit 阶段 — 三个同步方法</h2>
+    <div class="table-wrap reveal">
+      <table>
+        <tr><th></th><th>useInsertionEffect</th><th>Callback ref</th><th>useLayoutEffect</th></tr>
+        <tr><td><strong>顺序</strong></td><td>DOM 前</td><td>DOM 写入时</td><td>DOM 后、绘制前</td></tr>
+        <tr><td><strong>读 DOM?</strong></td><td>否</td><td>是（当前节点）</td><td>是（所有更新）</td></tr>
+        <tr><td><strong>阻塞绘制?</strong></td><td>是</td><td>是</td><td>是</td></tr>
+        <tr><td><strong>场景</strong></td><td>CSS-in-JS 注入</td><td>测量、初始化</td><td>布局修正、防闪烁</td></tr>
+        <tr><td><strong>频率</strong></td><td>极低</td><td>中等</td><td>偶尔</td></tr>
+      </table>
+    </div>
+    <div class="reveal reveal-d1" style="margin-top:var(--gap)">
+      <div class="diagram-box">insertionEffect -> React 写入 DOM -> callback ref(node) -> useLayoutEffect -> Paint -> useEffect</div>
+    </div>
+    <p class="reveal reveal-d2" style="margin-top:var(--gap);font-size:var(--body-size)">经验法则：<strong>99% 场景用 useEffect</strong>。需要同步读取/修改 DOM 布局才用 useLayoutEffect。</p>
+  </div>
+</section>
+
+<!-- SLIDE 17: FLUSHSYNC -->
+<section class="slide" id="s17">
+  <div class="slide-content">
+    <h2 class="slide-title">flushSync — 强制同步刷新</h2>
+    <p class="slide-sub reveal">React 18 默认批量处理 state 更新，flushSync 打破批量机制</p>
+    <div class="two-col reveal" style="margin-top:var(--gap)">
+      <div>
+        <h3 style="font-size:var(--h3-size)">默认批量更新</h3>
+        <div class="diagram-box">setState(A) -> setState(B) -> setState(C)
+                           |
+                    一次性渲染</div>
+      </div>
+      <div>
+        <h3 style="font-size:var(--h3-size)">flushSync 强制刷新</h3>
+        <div class="diagram-box"><span class="fn">flushSync</span>(() => setState(A))
+   | 立即渲染，DOM 已更新
+setState(B) -> 留到下一批</div>
+      </div>
+    </div>
+    <div class="code-block reveal reveal-d1" style="margin-top:var(--gap)"><span class="kw">import</span> { flushSync } <span class="kw">from</span> <span class="str">'react-dom'</span>
+<span class="fn">flushSync</span>(() <span class="op">=></span> { <span class="fn">setSelectedId</span>(id) })
+<span class="cm">// DOM 已更新，可同步读取</span>
+document.<span class="fn">getElementById</span>(<span class="str">`item-${id}`</span>)?.<span class="fn">scrollIntoView</span>()</div>
+    <p class="reveal reveal-d2" style="margin-top:var(--gap);font-size:var(--body-size)"><strong>99% 场景不需要</strong>。主要与第三方库（动画、滚动、测量）DOM 互操作时使用。</p>
+  </div>
+</section>
+
+<!-- SLIDE 18: IMPERATIVE VS DECLARATIVE -->
+<section class="slide" id="s18">
+  <div class="slide-content">
+    <h2 class="slide-title">命令式 vs 声明式</h2>
+    <p class="slide-sub reveal">"谁负责同步 DOM"是 React 开发中的核心决策</p>
+    <div class="table-wrap reveal">
+      <table>
+        <tr><th>维度</th><th>命令式 Imperative</th><th>声明式 Declarative</th></tr>
+        <tr><td><strong>DOM 操作</strong></td><td>事件处理器直接调用</td><td>useEffect 统一同步</td></tr>
+        <tr><td><strong>同步路径</strong></td><td>分散（事件 + DOM 事件兜底）</td><td>集中（Effect 一条路）</td></tr>
+        <tr><td><strong>组件模式</strong></td><td>非受控（状态在组件内）</td><td>受控（prop 驱动）</td></tr>
+        <tr><td><strong>可复用性</strong></td><td>低（状态与逻辑耦合）</td><td>高（纯展示 + prop 驱动）</td></tr>
+      </table>
+    </div>
+    <div class="card reveal reveal-d1" style="margin-top:var(--gap)">
+      <p><strong>React 推荐</strong>：事件处理器负责"响应交互"，Effect 负责"同步外部系统"。发现自己在多个地方写相同 DOM 操作时，收进 useEffect。</p>
+    </div>
+  </div>
+</section>
+
+<!-- SLIDE 19: REACT 19 FORM ACTIONS -->
+<section class="slide" id="s19">
+  <div class="slide-content">
+    <h2 class="slide-title">React 19 — Form Action</h2>
+    <div class="code-block reveal">&lt;<span class="type">form</span> action={handleAction}&gt;
+  &lt;<span class="type">input</span> name=<span class="str">"username"</span> /&gt;
+  &lt;<span class="type">button</span> type=<span class="str">"submit"</span>&gt;Submit&lt;/<span class="type">button</span>&gt;
+&lt;/<span class="type">form</span>&gt;
+
+<span class="cm">// 自动接收 FormData，无需 e.preventDefault()</span>
+<span class="kw">const</span> handleAction = (formData: FormData) <span class="op">=></span> {
+  formData.<span class="fn">get</span>(<span class="str">'username'</span>)
+}</div>
+    <div class="card-grid reveal reveal-d1" style="margin-top:var(--gap)">
+      <div class="card">
+        <h3>useActionState</h3>
+        <div class="code-block" style="font-size:var(--small-size);padding:0.4rem"><span class="kw">const</span> [state, action, isPending] =
+  <span class="fn">useActionState</span>(fn, <span class="num">null</span>)</div>
+        <p>管理 action 返回值 + pending 状态</p>
+      </div>
+      <div class="card">
+        <h3>useFormStatus</h3>
+        <div class="code-block" style="font-size:var(--small-size);padding:0.4rem"><span class="kw">const</span> { pending } = <span class="fn">useFormStatus</span>()</div>
+        <p>子组件内获取表单状态（Context）</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- SLIDE 20: SUSPENSE + USE -->
+<section class="slide" id="s20">
+  <div class="slide-content">
+    <h2 class="slide-title">Suspense + use — 异步数据</h2>
+    <div class="code-block reveal"><span class="kw">const</span> Message = ({ messagePromise }) <span class="op">=></span> {
+  <span class="kw">const</span> message = <span class="fn">use</span>(messagePromise)  <span class="cm">// 未 resolve -> throw</span>
+  <span class="kw">return</span> &lt;<span class="type">p</span>&gt;{message}&lt;/<span class="type">p</span>&gt;
+}</div>
+    <div class="reveal reveal-d1" style="margin-top:var(--gap)">
+      <div class="diagram-box">&lt;Suspense fallback={&lt;p&gt;loading...&lt;/p&gt;}&gt;
+  &lt;Message messagePromise={fetchMessage()} /&gt;
+&lt;/Suspense&gt;
+
+流程: use() 发现未 resolve -> throw -> Suspense 捕获 -> 显示 fallback
+     -> resolve -> 重新渲染 -> use() 返回值</div>
+    </div>
+  </div>
+</section>
+
+<!-- SLIDE 21: ZUSTAND -->
+<section class="slide" id="s21">
+  <div class="slide-content">
+    <h2 class="slide-title">zustand vs useState</h2>
+    <div class="table-wrap reveal">
+      <table>
+        <tr><th></th><th>useState</th><th>zustand</th></tr>
+        <tr><td><strong>作用域</strong></td><td>单个组件内</td><td>全局，所有组件共享</td></tr>
+        <tr><td><strong>跨组件</strong></td><td>需 props 逐层传递</td><td>直接用，无需传递</td></tr>
+        <tr><td><strong>持久化</strong></td><td>组件卸载就没了</td><td>store 一直在</td></tr>
+        <tr><td><strong>函数引用</strong></td><td>每次渲染可能新引用</td><td>store 函数引用始终不变</td></tr>
+      </table>
+    </div>
+    <div class="code-block reveal reveal-d1" style="margin-top:var(--gap)"><span class="cm">// store 函数引用不变 -> effect 只执行一次</span>
+<span class="kw">const</span> restore = <span class="fn">useAuthStore</span>(s <span class="op">=></span> s.restore)
+<span class="fn">useEffect</span>(() <span class="op">=></span> { <span class="fn">restore</span>() }, [restore])</div>
+  </div>
+</section>
+
+<!-- SLIDE 22: CUSTOM HOOKS -->
+<section class="slide" id="s22">
+  <div class="slide-content">
+    <h2 class="slide-title">自定义 Hook 实践</h2>
+    <div class="card-grid reveal">
+      <div class="card">
+        <h3>useLocalStorage</h3>
+        <div class="code-block" style="font-size:var(--small-size);padding:0.4rem"><span class="fn">useState</span>(() <span class="op">=></span>
+  <span class="fn">JSON.parse</span>(localStorage.<span class="fn">getItem</span>(key)))
+<span class="fn">useEffect</span>(() <span class="op">=></span>
+  localStorage.<span class="fn">setItem</span>(key,
+    <span class="fn">JSON.stringify</span>(state)),
+[state])</div>
+        <p>渲染后被动同步 localStorage</p>
+      </div>
+      <div class="card">
+        <h3>useAsync</h3>
+        <div class="code-block" style="font-size:var(--small-size);padding:0.4rem"><span class="fn">useState</span>&lt;T | null&gt;(null)   <span class="cm">// data</span>
+<span class="fn">useState</span>(<span class="num">false</span>)          <span class="cm">// loading</span>
+<span class="fn">useState</span>(<span class="num">null</span>)           <span class="cm">// error</span>
+<span class="fn">useCallback</span>(() <span class="op">=></span>
+  <span class="fn">asyncFunction</span>(), [fn])</div>
+        <p>封装 loading / error / data 三态</p>
+      </div>
+      <div class="card">
+        <h3>useScroll</h3>
+        <div class="code-block" style="font-size:var(--small-size);padding:0.4rem"><span class="fn">useState</span>({ x, y })
+<span class="fn">useEffect</span>(() <span class="op">=></span> {
+  <span class="fn">addEventListener</span>(<span class="str">'scroll'</span>, fn)
+  <span class="kw">return</span> () <span class="op">=></span>
+    <span class="fn">removeEventListener</span>(...)
+}, [])</div>
+        <p>监听滚动位置</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- SLIDE 23: SUMMARY -->
+<section class="slide" id="s23">
+  <div class="slide-content" style="align-items:center;text-align:center">
+    <h2 class="slide-title" style="font-size:var(--title-size)">知识全景</h2>
+    <div class="card-grid reveal" style="max-width:800px;margin:0 auto">
+      <div class="card" style="text-align:left">
+        <h3>Hook 链表机制</h3>
+        <p>靠位置索引匹配，必须顶层调用</p>
+      </div>
+      <div class="card" style="text-align:left">
+        <h3>执行时序</h3>
+        <p>Render 算 -> Commit 改 -> Effect 做副作用</p>
+      </div>
+      <div class="card" style="text-align:left">
+        <h3>缓存三位一体</h3>
+        <p>memo + useCallback + useMemo 缺一不可</p>
+      </div>
+      <div class="card" style="text-align:left">
+        <h3>声明式优先</h3>
+        <p>Effect 统一同步外部系统，避免分散操作</p>
+      </div>
+    </div>
+    <p class="reveal reveal-d2" style="margin-top:calc(var(--gap)*2);font-size:var(--body-size);color:var(--text-muted)">
+      详细笔记 -> <code>react-hooks.md</code> · <code>react-hooks-advanced.md</code>
+    </p>
+  </div>
+</section>
+
+</main>
+
+<div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+<nav class="nav-dots" id="navDots"></nav>
+<div class="slide-counter" id="slideCounter">1 / 23</div>
+<div class="keyboard-hint" id="keyHint">Arrow / Space to navigate</div>
+
+<script>
+(function() {
+  var canvas = document.getElementById('particles');
+  var ctx = canvas.getContext('2d');
+  var particles = [];
+  var COUNT = 35;
+
+  function resize() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
+  resize();
+  window.addEventListener('resize', resize);
+
+  for (var i = 0; i < COUNT; i++) {
+    particles.push({
+      x: Math.random() * canvas.width,
+      y: Math.random() * canvas.height,
+      r: Math.random() * 1.5 + 0.5,
+      dx: (Math.random() - 0.5) * 0.3,
+      dy: -Math.random() * 0.4 - 0.1,
+      a: Math.random() * 0.4 + 0.1
+    });
+  }
+
+  function draw() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    for (var i = 0; i < particles.length; i++) {
+      var p = particles[i];
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+      ctx.fillStyle = 'rgba(0,245,255,' + p.a + ')';
+      ctx.fill();
+      p.x += p.dx; p.y += p.dy;
+      if (p.y < -10) { p.y = canvas.height + 10; p.x = Math.random() * canvas.width; }
+      if (p.x < -10) p.x = canvas.width + 10;
+      if (p.x > canvas.width + 10) p.x = -10;
+    }
+    requestAnimationFrame(draw);
+  }
+  if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) draw();
+})();
+
+(function() {
+  var slides = document.querySelectorAll('.slide');
+  var total = slides.length;
+  var counter = document.getElementById('slideCounter');
+  var progressFill = document.getElementById('progressFill');
+  var navDots = document.getElementById('navDots');
+  var keyHint = document.getElementById('keyHint');
+  var current = 0;
+  var wheelLock = false;
+
+  for (var i = 0; i < total; i++) {
+    var dot = document.createElement('div');
+    dot.className = 'nav-dot';
+    dot.setAttribute('data-idx', i);
+    dot.addEventListener('click', function() { goTo(parseInt(this.getAttribute('data-idx'))); });
+    navDots.appendChild(dot);
+  }
+
+  function update() {
+    counter.textContent = (current + 1) + ' / ' + total;
+    progressFill.style.width = ((current + 1) / total * 100) + '%';
+    var dots = navDots.querySelectorAll('.nav-dot');
+    for (var i = 0; i < dots.length; i++) dots[i].classList.toggle('active', i === current);
+  }
+
+  function goTo(index) {
+    if (index < 0 || index >= total) return;
+    current = index;
+    slides[current].scrollIntoView({ behavior: 'smooth' });
+    update();
+  }
+
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'ArrowRight' || e.key === ' ' || e.key === 'ArrowDown') { e.preventDefault(); goTo(current + 1); }
+    if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') { e.preventDefault(); goTo(current - 1); }
+    if (e.key === 'Home') { e.preventDefault(); goTo(0); }
+    if (e.key === 'End') { e.preventDefault(); goTo(total - 1); }
+    if (keyHint) keyHint.style.opacity = '0';
+  });
+
+  document.addEventListener('wheel', function(e) {
+    if (wheelLock) return;
+    wheelLock = true;
+    if (e.deltaY > 0) goTo(current + 1); else goTo(current - 1);
+    setTimeout(function() { wheelLock = false; }, 600);
+  }, { passive: true });
+
+  var touchY = 0;
+  document.addEventListener('touchstart', function(e) { touchY = e.touches[0].clientY; });
+  document.addEventListener('touchend', function(e) {
+    var dy = touchY - e.changedTouches[0].clientY;
+    if (Math.abs(dy) > 40) { dy > 0 ? goTo(current + 1) : goTo(current - 1); }
+  });
+
+  var slideObserver = new IntersectionObserver(function(entries) {
+    for (var i = 0; i < entries.length; i++) {
+      if (entries[i].isIntersecting) {
+        var idx = Array.prototype.indexOf.call(slides, entries[i].target);
+        if (idx !== -1) { current = idx; update(); }
+      }
+    }
+  }, { threshold: 0.5 });
+  for (var i = 0; i < slides.length; i++) slideObserver.observe(slides[i]);
+
+  var revealObserver = new IntersectionObserver(function(entries) {
+    for (var i = 0; i < entries.length; i++) {
+      if (entries[i].isIntersecting) entries[i].target.classList.add('visible');
+    }
+  }, { threshold: 0.15 });
+  var reveals = document.querySelectorAll('.reveal');
+  for (var i = 0; i < reveals.length; i++) revealObserver.observe(reveals[i]);
+
+  update();
+})();
+</script>
+</body>
+</html>
