@@ -124,6 +124,64 @@ Render Props 本质是**回调思想的延伸**：
 
 ---
 
+## 合成事件（SyntheticEvent）
+
+React 对原生浏览器事件的跨浏览器封装层。
+
+### 核心机制
+
+- **统一接口**：屏蔽浏览器差异，提供一致的 `e.stopPropagation()`、`e.preventDefault()` 等 API
+- **事件委托**：React 不在每个 DOM 节点绑监听器，而是将所有事件委托到根节点（React 17+ 是 `rootElement`，之前是 `document`）
+- **性能优势**：无论多少个按钮，只注册一个监听器，减少内存占用
+
+```jsx
+<button onClick={(e) => {
+  console.log(e);            // SyntheticEvent（React 封装）
+  console.log(e.nativeEvent); // 原生 DOM Event
+}}>Click</button>
+```
+
+### 事件触发顺序
+
+```
+原生事件冒泡到根节点 → React 根节点捕获事件 → 从顶向下触发 onCaptureXxx → 从目标向上触发 onXxx
+```
+
+### React 17 前后差异
+
+| 版本 | 事件委托挂载点 | 事件池 |
+|------|--------------|--------|
+| React 16 及以前 | `document` | 有（回调后属性被清空，异步访问需 `e.persist()`） |
+| React 17+ | `rootElement` | 废弃（异步访问安全） |
+
+### 常用合成事件
+
+**表单事件（最常用）**
+- `onChange` — React 的 `onChange` 比原生更积极，**每次输入实时触发**（等同原生 `input` 事件）
+- `onInput` / `onSubmit` / `onInvalid`
+
+**鼠标事件**
+- `onClick` / `onDoubleClick`
+- `onMouseDown` / `onMouseUp` / `onMouseMove` / `onMouseEnter` / `onMouseLeave`
+
+**键盘事件**
+- `onKeyDown` / `onKeyUp`
+
+**聚焦事件**
+- `onFocus` / `onBlur`
+
+**剪贴板 / 触摸 / 滚轮 / 拖拽**
+- `onCopy` / `onCut` / `onPaste`
+- `onTouchStart` / `onTouchMove` / `onTouchEnd`
+- `onScroll` / `onWheel`
+- `onDragStart` / `onDrag` / `onDrop`
+
+**命名规律**：原生事件全小写（`onclick`），React 合成事件小驼峰（`onClick`）
+
+> 面试常考点：React 的 `onChange` 在每次输入时触发，而原生 `<input>` 的 `change` 在失去焦点后才触发
+
+---
+
 ## Hooks
 
 ### 调用规则 — 为什么 Hook 必须在顶层调用

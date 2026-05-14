@@ -1,5 +1,6 @@
 import { HomePage } from "@/pages/HomePage"
 import { BoardPage } from "@/pages/BoardPage"
+import { TaskPage } from "@/pages/TaskPage"
 import { createBrowserRouter } from "react-router"
 
 const routes = [
@@ -9,6 +10,10 @@ const routes = [
     }, {
         path: "/board",
         element: <BoardPage />
+    }
+    , {
+        path: "/task",
+        element: <TaskPage />
     }
 ]
 
