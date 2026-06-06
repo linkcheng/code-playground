@@ -162,7 +162,51 @@ name           → 普通包
 
 > `^` 是 `npm install` / `pnpm add` 的默认行为。实际安装版本锁定在 `pnpm-lock.yaml` 中，确保团队一致。
 
-### 2.2 tsconfig.json 配置体系
+### 2.2 @types 包：运行时与编译时的桥梁
+
+**是什么：** `@types/xxx` 是 TypeScript 类型声明文件（`.d.ts`），由 [DefinitelyTyped](https://github.com/DefinitelyTyped/DefinitelyTyped) 社区维护。它告诉 TS 编译器某个库的 API 签名，使你在使用时获得类型提示和检查。
+
+**为什么有些库需要 `@types`，有些不需要？**
+
+| 方式 | 谁负责类型 | 例子 |
+|------|-----------|------|
+| **内置类型** | 包自带 `.d.ts`（`package.json` 的 `types`/`exports.types` 字段） | `zod`、`zustand`、`react-router` |
+| **DefinitelyTyped** | 社区维护 `@types/xxx` | `react`、`node`、`express` |
+
+判断方法：查看包的 `package.json`，有 `types` 或 `typings` 字段 → 自带类型，无需 `@types`。
+
+**常见 @types 包的版本对应：**
+
+| @types 包 | 版本规则 | 说明 |
+|-----------|---------|------|
+| `@types/node` | 大版本匹配 Node.js 大版本 | `@types/node@22` → Node 22.x |
+| `@types/react` | 大版本匹配 React 大版本 | `@types/react@19` → React 19.x |
+
+小版本不需要精确匹配，类型包和运行时包的发布节奏独立。
+
+**为什么放在 devDependencies？**
+
+```json
+{
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "@types/react": "^19.2.14"
+  }
+}
+```
+
+`@types` 包只在**编译时**被 TypeScript 和 IDE 消费，不会被打包进产物。具体消费者：
+
+- **`@types/node`**：`vite.config.ts`（Node 环境中运行的构建脚本）、`tsconfig.node.json` 的 `"types": ["node"]`
+- **`@types/react`**：`.tsx` 文件中的组件类型检查（`useState`、`FC`、`ReactNode` 等）
+
+**为什么 `dependencies` 里没有 `node`？**
+
+Node.js 是运行环境，不是 npm 包，不需要声明为依赖。
+
+> **趋势：** React 19 开始计划将类型内置到 `react` 包中。一旦完成，`@types/react` 将不再必要。更多库也在向内置类型迁移。
+
+### 2.3 tsconfig.json 配置体系
 
 **为什么需要多个配置文件？**
 ```

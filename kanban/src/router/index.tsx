@@ -1,20 +1,12 @@
-import { HomePage } from "@/pages/HomePage"
-import { BoardPage } from "@/pages/BoardPage"
-import { TaskPage } from "@/pages/TaskPage"
+import { routes } from "./routes"
+import { Layout } from "@/components/Layout"
 import { createBrowserRouter } from "react-router"
 
-const routes = [
+const router = createBrowserRouter([
     {
-        path: "/",
-        element: <HomePage />
-    }, {
-        path: "/board",
-        element: <BoardPage />
-    }
-    , {
-        path: "/task",
-        element: <TaskPage />
-    }
-]
+        element: <Layout />,
+        children: routes.map(({ path, element }) => ({ path, element })),
+    },
+])
 
-export const router = createBrowserRouter(routes)
+export { router }

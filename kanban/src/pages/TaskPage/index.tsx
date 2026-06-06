@@ -37,7 +37,7 @@ export const TaskPage = () => {
     await createTask(form);
     setForm({ description: '', completionTime: '' });
     setShowAddModal(false);
-    loadTasks();
+    await loadTasks();
   };
 
   const handleComplete = async (id: number) => {
@@ -54,8 +54,8 @@ export const TaskPage = () => {
 
   return (
     <div className="max-w-3xl mx-auto py-8 px-4">
-      <div className="flex items-center justify-between mb-6 border-b pb24">
-        <h1 className="text-2xl font-bold">TASK OA 任务管理系统</h1>
+      <div className="flex items-center justify-between mb-6 border-b pb4">
+        <h2 className="text-2xl font-bold">TASK OA 任务管理系统</h2>
       </div>
 
       {/* 筛选标签 */}

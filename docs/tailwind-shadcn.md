@@ -224,6 +224,39 @@ pnpx shadcn@latest add dialog dropdown-menu
 | `src/lib/utils.ts` | `cn()` 工具函数 |
 | `src/index.css` | 追加 CSS 变量（颜色、圆角等主题 token） |
 
+### init 命令参数
+
+新版 shadcn 用 **preset（预设）** 机制替代了命令行里的颜色/样式交互选择。
+
+```bash
+# 基本初始化（交互式引导）
+pnpx shadcn@latest init
+
+# 指定框架模板
+pnpx shadcn@latest init --template vite
+
+# 使用 shadcn/create 生成的预设（推荐）
+pnpx shadcn@latest init --preset <CODE> --template vite
+
+# 使用默认配置（next + nova preset）
+pnpx shadcn@latest init --defaults
+
+# 强制覆盖已有配置
+pnpx shadcn@latest init --force
+```
+
+| 参数 | 作用 | 可选值 |
+|---|---|---|
+| `-t, --template` | 框架模板 | `next`, `vite`, `react-router`, `laravel`, `astro` |
+| `-b, --base` | 组件库基础 | `radix`, `base` |
+| `-p, --preset` | 预设主题 code | 从 [shadcn.com/create](https://ui.shadcn.com/create) 获取 |
+| `-d, --defaults` | 使用默认配置 | — |
+| `-y, --yes` | 跳过确认提示 | 默认 `true` |
+| `-f, --force` | 覆盖已有配置 | — |
+| `--css-variables` | 启用 CSS 变量主题 | 默认 `true` |
+
+> **为什么颜色选择不在命令行了？** 颜色是视觉决策，终端无法预览效果。官方推荐用 [shadcn/create](https://ui.shadcn.com/create) 网页工具可视化选色，满意后导出 preset code，一条命令搞定。
+
 ### cn() 工具函数
 
 这是 shadcn/ui 的核心工具，用于**合并 Tailwind class**：
@@ -276,6 +309,68 @@ import { Button } from "@/components/ui/button"
 // 自定义 className（通过 cn() 合并）
 <Button className="w-full">Full Width</Button>
 ```
+
+### Button 样式定制的三种方式
+
+以 `button.tsx` 为例，shadcn 组件的样式定制有三个层级（从轻到重）：
+
+**方式 1：使用时 `className` 覆盖（零侵入）**
+
+```tsx
+// cn() 会智能去重：bg-primary 被 bg-emerald-600 替换
+<Button className="bg-emerald-600 hover:bg-emerald-700 text-white">
+  新增任务
+</Button>
+```
+
+适合：一次性调整，不影响其他按钮。
+
+**方式 2：修改 `buttonVariants` 添加/调整 variant（组件级）**
+
+直接编辑 `button.tsx` 中 CVA 的 `variants.variant`：
+
+```tsx
+// 添加新 variant
+const buttonVariants = cva("base...", {
+  variants: {
+    variant: {
+      default: "bg-primary ...",
+      // 新增 success variant
+      success: "bg-emerald-600 text-white hover:bg-emerald-700",
+    },
+  },
+})
+
+// 使用：<Button variant="success">新增任务</Button>
+```
+
+适合：项目中多处复用同一种风格。
+
+**方式 3：修改 CSS 变量（全局级）**
+
+在 `index.css` 中修改语义 token：
+
+```css
+/* 所有用到 bg-primary 的组件都会跟着变 */
+:root {
+  --primary: oklch(0.55 0.2 260);  /* 蓝色调 */
+}
+.dark {
+  --primary: oklch(0.7 0.2 260);   /* 暗色模式下的蓝色 */
+}
+```
+
+| Token | 影响范围 |
+|---|---|
+| `--primary` | 默认按钮背景、link 文字色 |
+| `--destructive` | destructive 按钮色 |
+| `--secondary` | secondary 按钮背景 |
+| `--muted` | ghost/hover 背景 |
+| `--radius` | 全局圆角大小 |
+
+适合：想全局换主题色。
+
+> **为什么默认按钮是黑色？** 因为 `--primary: oklch(0.205 0 0)` 是近黑色，而 `default` variant 用了 `bg-primary`。改成蓝色只需改 `--primary` 变量。
 
 ### 组件结构解析
 
